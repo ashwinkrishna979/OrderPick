@@ -1,33 +1,35 @@
 package main
 
 import (
+	controller "OrderPick/controllers"
 	"OrderPick/database"
 	"OrderPick/middleware"
+	"OrderPick/repositories"
 	"OrderPick/routes"
+	"log"
 
 	"os"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var ordercollection *mongo.Collection = database.OpenCollection(database.Client, "food")
-
 func main() {
-
+	conn, err := database.SetupDBConnection()
+	if err != nil {
+		log.Fatal("Could not set up database connection:", err)
+	}
+	defer conn.Session.Close()
+	repo := repositories.NewUserRepository(conn.Session)
+	userController := controller.NewUserController(repo)
 	port := os.Getenv("PORT")
 
 	if port == "" {
 		port = "8000"
 	}
-
 	router := gin.New()
 	router.Use(gin.Logger())
-	routes.UserRoutes(router)
+	routes.UserRoutes(router, userController)
 	router.Use(middleware.Authentication())
-
-	routes.ItemRoutes(router)
-	routes.OrderRoutes(router)
 
 	router.Run(":" + port)
 }
