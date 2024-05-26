@@ -32,7 +32,7 @@ func SetupDBConnection() (DBConnection, error) {
 }
 
 func createUserTable(session *gocql.Session) error {
-	query := `
+	createTableQuery := `
     CREATE TABLE IF NOT EXISTS user (
         user_id UUID PRIMARY KEY,
         email TEXT,
@@ -46,5 +46,17 @@ func createUserTable(session *gocql.Session) error {
         token_ TEXT,
         refresh_token TEXT
     )`
-	return session.Query(query).Exec()
+
+	if err := session.Query(createTableQuery).Exec(); err != nil {
+		return err
+	}
+	createEmailIndexQuery := `CREATE INDEX IF NOT EXISTS ON user(email)`
+	if err := session.Query(createEmailIndexQuery).Exec(); err != nil {
+		return err
+	}
+	createPhoneIndexQuery := `CREATE INDEX IF NOT EXISTS ON user(phone)`
+	if err := session.Query(createPhoneIndexQuery).Exec(); err != nil {
+		return err
+	}
+	return nil
 }

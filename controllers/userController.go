@@ -72,6 +72,18 @@ func (ctrl *UserController) SignUp(c *gin.Context) {
 		return
 	}
 
+	// check user exit?
+	foundUser, err := ctrl.repo.GetUserByEmail(*user.Email)
+	if foundUser.User_id != "" && err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error in fetching user by email",
+			"detail": err})
+		return
+	}
+	if foundUser.User_id != "" {
+		c.JSON(http.StatusConflict, gin.H{"conflict": "email already registered"})
+		return
+	}
+
 	hashedPassword := HashPassword(*user.Password)
 	user.Password = &hashedPassword
 
