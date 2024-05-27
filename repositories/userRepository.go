@@ -53,6 +53,6 @@ func (r *UserRepository) GetUsers(recordPerPage, startIndex int) ([]models.User,
 }
 
 func (r *UserRepository) UpdateTokens(userId, token, refreshToken string, updatedAt time.Time) error {
-	query := "UPDATE user SET token = ?, refresh_token = ?, updated_at = ? WHERE user_id = ?"
+	query := "UPDATE user SET token_ = ?, refresh_token = ?, updated_at = ? WHERE user_id = ?"
 	return r.session.Query(query, token, refreshToken, updatedAt, userId).Exec()
 }

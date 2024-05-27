@@ -102,7 +102,8 @@ func (ctrl *UserController) SignUp(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "user created successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": "user created successfully",
+		"token": user.Token})
 }
 
 func (ctrl *UserController) Login(c *gin.Context) {
