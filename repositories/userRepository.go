@@ -32,8 +32,7 @@ func (r *UserRepository) GetUserById(userId string) (models.User, error) {
 	var user models.User
 	query := "SELECT * FROM user WHERE user_id = ? LIMIT 1"
 	err := r.session.Query(query, userId).Consistency(gocql.One).Scan(
-		&user.User_id, &user.Email, &user.Phone, &user.Password, &user.Created_at, &user.Updated_at, &user.First_name, &user.Last_name, &user.Avatar, &user.Token, &user.Refresh_Token,
-	)
+		&user.User_id, &user.Avatar, &user.Created_at, &user.Email, &user.First_name, &user.Last_name, &user.Password, &user.Phone, &user.Refresh_Token, &user.Token, &user.Updated_at)
 	return user, err
 }
 

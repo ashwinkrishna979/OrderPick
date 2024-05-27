@@ -105,8 +105,7 @@ func (ctrl *UserController) SignUp(c *gin.Context) {
 
 	user.Created_at = time.Now()
 	user.Updated_at = time.Now()
-	user.ID = gocql.TimeUUID()
-	user.User_id = user.ID.String()
+	user.User_id = gocql.TimeUUID().String()
 
 	token, refreshToken, _ := helpers.GenerateAllTokens(*user.Email, *user.First_name, *user.Last_name, user.User_id)
 	user.Token = &token
