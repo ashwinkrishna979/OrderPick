@@ -37,19 +37,24 @@ func (r *UserRepository) GetUserById(userId string) (models.User, error) {
 	return user, err
 }
 
-func (r *UserRepository) GetUsers(recordPerPage, startIndex int) ([]models.User, error) {
-	query := "SELECT * FROM user LIMIT ? OFFSET ?"
-	iter := r.session.Query(query, recordPerPage, startIndex).Iter()
+func (r *UserRepository) GetUsers(recordPerPage int, pagingState []byte) ([]models.User, []byte, error) {
+	query := "SELECT user_id, email, phone, password, created_at, updated_at, first_name, last_name, avatar, token_, refresh_token FROM user LIMIT ?"
+	iter := r.session.Query(query, recordPerPage).PageState(pagingState).Iter()
 
 	var users []models.User
-	var user models.User
-	for iter.Scan(&user.User_id, &user.Email, &user.Phone, &user.Password, &user.Created_at, &user.Updated_at, &user.First_name, &user.Last_name, &user.Avatar, &user.Token, &user.Refresh_Token) {
+	for {
+		var user models.User
+		if !iter.Scan(&user.User_id, &user.Email, &user.Phone, &user.Password, &user.Created_at, &user.Updated_at, &user.First_name, &user.Last_name, &user.Avatar, &user.Token, &user.Refresh_Token) {
+			break
+		}
 		users = append(users, user)
 	}
 	if err := iter.Close(); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return users, nil
+
+	nextPageState := iter.PageState()
+	return users, nextPageState, nil
 }
 
 func (r *UserRepository) UpdateTokens(userId, token, refreshToken string, updatedAt time.Time) error {

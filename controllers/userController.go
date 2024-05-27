@@ -4,6 +4,7 @@ import (
 	"OrderPick/helpers"
 	"OrderPick/models"
 	"OrderPick/repositories"
+	"encoding/base64"
 	"log"
 	"net/http"
 	"strconv"
@@ -26,27 +27,42 @@ func NewUserController(repo *repositories.UserRepository) *UserController {
 }
 
 func (ctrl *UserController) GetUsers(c *gin.Context) {
+	// Parse recordPerPage from query parameters
 	recordPerPage, err := strconv.Atoi(c.Query("recordPerPage"))
 	if err != nil || recordPerPage < 1 {
 		recordPerPage = 10
 	}
 
-	page, err := strconv.Atoi(c.Query("page"))
-	if err != nil || page < 1 {
-		page = 1
+	// Get pagingState from query parameters (it should be base64 encoded)
+	pagingStateBase64 := c.Query("pagingState")
+	var pagingState []byte
+	if pagingStateBase64 != "" {
+		pagingState, err = base64.StdEncoding.DecodeString(pagingStateBase64)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid pagingState"})
+			return
+		}
 	}
 
-	startIndex := (page - 1) * recordPerPage
-
-	users, err := ctrl.repo.GetUsers(recordPerPage, startIndex)
+	// Call the repository to get users
+	users, nextPageState, err := ctrl.repo.GetUsers(recordPerPage, pagingState)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error occurred while listing user items"})
 		return
 	}
 
-	c.JSON(http.StatusOK, users)
-}
+	// Encode the nextPageState to base64 for the response
+	var nextPageStateBase64 string
+	if len(nextPageState) > 0 {
+		nextPageStateBase64 = base64.StdEncoding.EncodeToString(nextPageState)
+	}
 
+	// Return the users and the nextPageState in the response
+	c.JSON(http.StatusOK, gin.H{
+		"users":         users,
+		"nextPageState": nextPageStateBase64,
+	})
+}
 func (ctrl *UserController) GetUser(c *gin.Context) {
 	userId := c.Param("user_id")
 
