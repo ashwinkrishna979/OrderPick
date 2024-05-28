@@ -28,6 +28,10 @@ func SetupDBConnection() (DBConnection, error) {
 	if err := createUserTable(connection.Session); err != nil {
 		log.Fatal("Failed to create user table:", err)
 	}
+
+	if err := createItemTable(connection.Session); err != nil {
+		log.Fatal("Failed to create item table:", err)
+	}
 	return connection, nil
 }
 
@@ -56,6 +60,19 @@ func createUserTable(session *gocql.Session) error {
 	}
 	createPhoneIndexQuery := `CREATE INDEX IF NOT EXISTS ON user(phone)`
 	if err := session.Query(createPhoneIndexQuery).Exec(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func createItemTable(session *gocql.Session) error {
+	createTableQuery := `
+	    CREATE TABLE IF NOT EXISTS item (
+        item_id UUID PRIMARY KEY,
+        name TEXT
+    )
+	`
+	if err := session.Query(createTableQuery).Exec(); err != nil {
 		return err
 	}
 	return nil

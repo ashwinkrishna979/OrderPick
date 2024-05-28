@@ -19,8 +19,10 @@ func main() {
 		log.Fatal("Could not set up database connection:", err)
 	}
 	defer conn.Session.Close()
-	repo := repositories.NewUserRepository(conn.Session)
-	userController := controller.NewUserController(repo)
+	userRepo := repositories.NewUserRepository(conn.Session)
+	itemRepo := repositories.NewItemRepository(conn.Session)
+	userController := controller.NewUserController(userRepo)
+	itemController := controller.NewItemController(itemRepo)
 	port := os.Getenv("PORT")
 
 	if port == "" {
@@ -30,6 +32,8 @@ func main() {
 	router.Use(gin.Logger())
 	routes.UserRoutes(router, userController)
 	router.Use(middleware.Authentication())
+
+	routes.ItemRoutes(router, itemController)
 
 	router.Run(":" + port)
 }
