@@ -32,7 +32,12 @@ func SetupDBConnection() (DBConnection, error) {
 	if err := createItemTable(connection.Session); err != nil {
 		log.Fatal("Failed to create item table:", err)
 	}
+
+	if err := createOrderTable(connection.Session); err != nil {
+		log.Fatal("Failed to create order table:", err)
+	}
 	return connection, nil
+
 }
 
 func createUserTable(session *gocql.Session) error {
@@ -70,6 +75,22 @@ func createItemTable(session *gocql.Session) error {
 	    CREATE TABLE IF NOT EXISTS item (
         item_id UUID PRIMARY KEY,
         name TEXT
+    )
+	`
+	if err := session.Query(createTableQuery).Exec(); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Function to create the order table
+func createOrderTable(session *gocql.Session) error {
+	createTableQuery := `
+	    CREATE TABLE IF NOT EXISTS orders (
+        order_id UUID PRIMARY KEY,
+        item_id TEXT,
+        created_at TIMESTAMP,
+        packing_status BOOLEAN
     )
 	`
 	if err := session.Query(createTableQuery).Exec(); err != nil {

@@ -21,8 +21,12 @@ func main() {
 	defer conn.Session.Close()
 	userRepo := repositories.NewUserRepository(conn.Session)
 	itemRepo := repositories.NewItemRepository(conn.Session)
+	orderRepo := repositories.NewOrderRepository(conn.Session)
+
 	userController := controller.NewUserController(userRepo)
 	itemController := controller.NewItemController(itemRepo)
+	orderController := controller.NewOrderController(orderRepo)
+
 	port := os.Getenv("PORT")
 
 	if port == "" {
@@ -31,9 +35,11 @@ func main() {
 	router := gin.New()
 	router.Use(gin.Logger())
 	routes.UserRoutes(router, userController)
+
 	router.Use(middleware.Authentication())
 
 	routes.ItemRoutes(router, itemController)
+	routes.OrderRoutes(router, orderController)
 
 	router.Run(":" + port)
 }
