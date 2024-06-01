@@ -4,6 +4,7 @@ import (
 	"OrderPick/models"
 	"OrderPick/repositories"
 	"encoding/base64"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -92,4 +93,17 @@ func (ctrl *OrderController) CreateOrder(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "order created successfully"})
+}
+
+func (ctrl *OrderController) CreateOrderFromConsumer(itemId string) error {
+	var order models.Order
+	order.Created_at = time.Now()
+	order.Item_id = &itemId
+	order.Order_ID = gocql.TimeUUID()
+	order.Packing_status = false
+	if err := ctrl.repo.CreateOrder(order); err != nil {
+		return err
+	}
+	fmt.Println("Order created successfully")
+	return nil
 }

@@ -3,6 +3,7 @@ package main
 import (
 	controller "OrderPick/controllers"
 	"OrderPick/database"
+	"OrderPick/kafka"
 	"OrderPick/middleware"
 	"OrderPick/repositories"
 	"OrderPick/routes"
@@ -14,11 +15,13 @@ import (
 )
 
 func main() {
+
 	conn, err := database.SetupDBConnection()
 	if err != nil {
 		log.Fatal("Could not set up database connection:", err)
 	}
 	defer conn.Session.Close()
+
 	userRepo := repositories.NewUserRepository(conn.Session)
 	itemRepo := repositories.NewItemRepository(conn.Session)
 	orderRepo := repositories.NewOrderRepository(conn.Session)
@@ -26,6 +29,8 @@ func main() {
 	userController := controller.NewUserController(userRepo)
 	itemController := controller.NewItemController(itemRepo)
 	orderController := controller.NewOrderController(orderRepo)
+
+	go kafka.ConsumeOrder(orderController)
 
 	port := os.Getenv("PORT")
 
