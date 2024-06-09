@@ -1,5 +1,5 @@
 'use client'
-import React from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import {
   Table,
   TableHeader,
@@ -9,154 +9,116 @@ import {
   TableCell,
   Input,
   Button,
-  DropdownTrigger,
-  Dropdown,
-  DropdownMenu,
-  DropdownItem,
-  Chip,
-  User,
   Pagination,
   Selection,
-  ChipProps,
   SortDescriptor
 } from "@nextui-org/react";
-import {PlusIcon} from "../icons";
-import {VerticalDotsIcon} from "../icons";
-import {ChevronDownIcon} from "../icons";
-import {SearchIcon} from "../icons";
-import {columns, users, statusOptions} from "../../usecase/data";
-import {capitalize} from "../../utils/utils";
+import { PlusIcon } from "../icons";
+import { SearchIcon } from "../icons";
+import { orders, columns } from "../../usecase/order-data";
 
-const statusColorMap: Record<string, ChipProps["color"]> = {
-  active: "success",
-  paused: "danger",
-  vacation: "warning",
-};
+const INITIAL_VISIBLE_COLUMNS = ["order_id", "item_id", "created_at", "packing_status"];
 
-const INITIAL_VISIBLE_COLUMNS = ["name", "role", "status", "actions"];
-
-type User = typeof users[0];
+type Order = typeof orders[0];
 
 export default function PackedTable() {
-  const [filterValue, setFilterValue] = React.useState("");
-  const [selectedKeys, setSelectedKeys] = React.useState<Selection>(new Set([]));
-  const [visibleColumns, setVisibleColumns] = React.useState<Selection>(new Set(INITIAL_VISIBLE_COLUMNS));
-  const [statusFilter, setStatusFilter] = React.useState<Selection>("all");
-  const [rowsPerPage, setRowsPerPage] = React.useState(5);
-  const [sortDescriptor, setSortDescriptor] = React.useState<SortDescriptor>({
-    column: "age",
+  const [filterValue, setFilterValue] = useState("");
+  const [selectedKeys, setSelectedKeys] = useState<Selection>(new Set([]));
+  const [visibleColumns] = useState<Selection>(new Set(INITIAL_VISIBLE_COLUMNS));
+  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({
+    column: "order_id",
     direction: "ascending",
   });
-  const [page, setPage] = React.useState(1);
+  const [page, setPage] = useState(1);
 
-  const pages = Math.ceil(users.length / rowsPerPage);
+  useEffect(() => {
+    console.log("orders:", orders);
+  }, []);
+
+  const pages = Math.ceil(orders.length / rowsPerPage);
 
   const hasSearchFilter = Boolean(filterValue);
 
-  const headerColumns = React.useMemo(() => {
+  const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) => Array.from(visibleColumns).includes(column.uid));
   }, [visibleColumns]);
 
-  const filteredItems = React.useMemo(() => {
-    let filteredUsers = [...users];
+  const filteredItems = useMemo(() => {
+    let filteredOrders = [...orders];
 
     if (hasSearchFilter) {
-      filteredUsers = filteredUsers.filter((user) =>
-        user.name.toLowerCase().includes(filterValue.toLowerCase()),
-      );
-    }
-    if (statusFilter !== "all" && Array.from(statusFilter).length !== statusOptions.length) {
-      filteredUsers = filteredUsers.filter((user) =>
-        Array.from(statusFilter).includes(user.status),
+      filteredOrders = filteredOrders.filter((order) =>
+        order.order_id.toLowerCase().includes(filterValue.toLowerCase()),
       );
     }
 
-    return filteredUsers;
-  }, [users, filterValue, statusFilter]);
+    return filteredOrders;
+  }, [filterValue]);
 
-  const items = React.useMemo(() => {
+  const items = useMemo(() => {
     const start = (page - 1) * rowsPerPage;
     const end = start + rowsPerPage;
 
     return filteredItems.slice(start, end);
   }, [page, filteredItems, rowsPerPage]);
 
-  const sortedItems = React.useMemo(() => {
-    return [...items].sort((a: User, b: User) => {
-      const first = a[sortDescriptor.column as keyof User] as number;
-      const second = b[sortDescriptor.column as keyof User] as number;
+  const sortedItems = useMemo(() => {
+    return [...items].sort((a: Order, b: Order) => {
+      const first = a[sortDescriptor.column as keyof Order] as string;
+      const second = b[sortDescriptor.column as keyof Order] as string;
       const cmp = first < second ? -1 : first > second ? 1 : 0;
 
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
   }, [sortDescriptor, items]);
 
-  const renderCell = React.useCallback((user: User, columnKey: React.Key) => {
-    const cellValue = user[columnKey as keyof User];
+  const renderCell = useCallback((order: Order, columnKey: React.Key) => {
+    const cellValue = order[columnKey as keyof Order];
 
     switch (columnKey) {
-      case "name":
-        return (
-          <User
-            avatarProps={{radius: "full", size: "sm", src: user.avatar}}
-            classNames={{
-              description: "text-default-500",
-            }}
-            description={user.email}
-            name={cellValue}
-          >
-            {user.email}
-          </User>
-        );
-      case "role":
+      case "order_id":
         return (
           <div className="flex flex-col">
-            <p className="text-bold text-small capitalize">{cellValue}</p>
-            <p className="text-bold text-tiny capitalize text-default-500">{user.team}</p>
+            <p className="text-bold text-small capitalize">{cellValue.toString()}</p>
+            <p className="text-bold text-tiny capitalize text-default-500">{order.order_id}</p>
           </div>
         );
-      case "status":
+      case "created_at":
         return (
-          <Chip
-            className="capitalize border-none gap-1 text-default-600"
-            color={statusColorMap[user.status]}
-            size="sm"
-            variant="dot"
-          >
-            {cellValue}
-          </Chip>
+          <div className="flex flex-col">
+            <p className="text-bold text-small capitalize">{cellValue.toString()}</p>
+            <p className="text-bold text-tiny capitalize text-default-500">{new Date(order.created_at).toDateString()}</p>
+          </div>
         );
-      case "actions":
+      case "item_id":
         return (
-          <div className="relative flex justify-end items-center gap-2">
-            <Dropdown className="bg-background border-1 border-default-200">
-              <DropdownTrigger>
-                <Button isIconOnly radius="full" size="sm" variant="light">
-                  <VerticalDotsIcon className="text-default-400" />
-                </Button>
-              </DropdownTrigger>
-              <DropdownMenu>
-                <DropdownItem>View</DropdownItem>
-                <DropdownItem>Edit</DropdownItem>
-                <DropdownItem>Delete</DropdownItem>
-              </DropdownMenu>
-            </Dropdown>
+          <div className="flex flex-col">
+            <p className="text-bold text-small capitalize">{cellValue.toString()}</p>
+            <p className="text-bold text-tiny capitalize text-default-500">{order.item_id}</p>
+          </div>
+        );
+      case "packing_status":
+        return (
+          <div className="flex flex-col">
+            <p className="text-bold text-small capitalize">{cellValue.toString()}</p>
+            <p className="text-bold text-tiny capitalize text-default-500">{order.packing_status}</p>
           </div>
         );
       default:
-        return cellValue;
+        return cellValue.toString();
     }
   }, []);
   
 
-  const onRowsPerPageChange = React.useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+  const onRowsPerPageChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     setRowsPerPage(Number(e.target.value));
     setPage(1);
   }, []);
 
-  const onSearchChange = React.useCallback((value?: string) => {
+  const onSearchChange = useCallback((value?: string) => {
     if (value) {
       setFilterValue(value);
       setPage(1);
@@ -165,7 +127,7 @@ export default function PackedTable() {
     }
   }, []);
 
-  const topContent = React.useMemo(() => {
+  const topContent = useMemo(() => {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex justify-between gap-3 items-end">
@@ -175,7 +137,7 @@ export default function PackedTable() {
               base: "w-full sm:max-w-[44%]",
               inputWrapper: "border-1",
             }}
-            placeholder="Search by name..."
+            placeholder="Search by order id..."
             size="sm"
             startContent={<SearchIcon className="text-default-300" />}
             value={filterValue}
@@ -184,56 +146,6 @@ export default function PackedTable() {
             onValueChange={onSearchChange}
           />
           <div className="flex gap-3">
-            <Dropdown>
-              <DropdownTrigger className="hidden sm:flex">
-                <Button
-                  endContent={<ChevronDownIcon className="text-small" />}
-                  size="sm"
-                  variant="flat"
-                >
-                  Status
-                </Button>
-              </DropdownTrigger>
-              <DropdownMenu
-                disallowEmptySelection
-                aria-label="Table Columns"
-                closeOnSelect={false}
-                selectedKeys={statusFilter}
-                selectionMode="multiple"
-                onSelectionChange={setStatusFilter}
-              >
-                {statusOptions.map((status) => (
-                  <DropdownItem key={status.uid} className="capitalize">
-                    {capitalize(status.name)}
-                  </DropdownItem>
-                ))}
-              </DropdownMenu>
-            </Dropdown>
-            <Dropdown>
-              <DropdownTrigger className="hidden sm:flex">
-                <Button
-                  endContent={<ChevronDownIcon className="text-small" />}
-                  size="sm"
-                  variant="flat"
-                >
-                  Columns
-                </Button>
-              </DropdownTrigger>
-              <DropdownMenu
-                disallowEmptySelection
-                aria-label="Table Columns"
-                closeOnSelect={false}
-                selectedKeys={visibleColumns}
-                selectionMode="multiple"
-                onSelectionChange={setVisibleColumns}
-              >
-                {columns.map((column) => (
-                  <DropdownItem key={column.uid} className="capitalize">
-                    {capitalize(column.name)}
-                  </DropdownItem>
-                ))}
-              </DropdownMenu>
-            </Dropdown>
             <Button
               className="bg-foreground text-background"
               endContent={<PlusIcon />}
@@ -244,7 +156,7 @@ export default function PackedTable() {
           </div>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-default-400 text-small">Total {users.length} users</span>
+          <span className="text-default-400 text-small">Total {orders.length} orders</span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
             <select
@@ -261,15 +173,11 @@ export default function PackedTable() {
     );
   }, [
     filterValue,
-    statusFilter,
-    visibleColumns,
     onSearchChange,
     onRowsPerPageChange,
-    users.length,
-    hasSearchFilter,
   ]);
 
-  const bottomContent = React.useMemo(() => {
+  const bottomContent = useMemo(() => {
     return (
       <div className="py-2 px-2 flex justify-between items-center">
         <Pagination
@@ -293,7 +201,7 @@ export default function PackedTable() {
     );
   }, [selectedKeys, items.length, page, pages, hasSearchFilter]);
 
-  const classNames = React.useMemo(
+  const classNames = useMemo(
     () => ({
       wrapper: ["max-h-[382px]", "max-w-3xl"],
       th: ["bg-transparent", "text-default-500", "border-b", "border-divider"],
@@ -344,9 +252,9 @@ export default function PackedTable() {
           </TableColumn>
         )}
       </TableHeader>
-      <TableBody emptyContent={"No users found"} items={sortedItems}>
+      <TableBody emptyContent={"No orders found"} items={sortedItems}>
         {(item) => (
-          <TableRow key={item.id}>
+          <TableRow key={item.order_id}>
             {(columnKey) => <TableCell>{renderCell(item, columnKey)}</TableCell>}
           </TableRow>
         )}
