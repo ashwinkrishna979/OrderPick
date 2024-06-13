@@ -15,13 +15,16 @@ import {
 } from "@nextui-org/react";
 import { PlusIcon } from "../icons";
 import { SearchIcon } from "../icons";
-import { orders, columns } from "../../usecase/order-data";
+import { columns } from "../../usecase/order-data";
+import useFetchOrders from '../../usecase/use-fetch-order';
 
 const INITIAL_VISIBLE_COLUMNS = ["order_id", "item_id", "created_at", "packing_status"];
 
-type Order = typeof orders[0];
+const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJFbWFpbCI6IiIsIkZpcnN0X25hbWUiOiIiLCJMYXN0X25hbWUiOiIiLCJVaWQiOiIiLCJleHAiOjE3MTg4NDE5NTF9.6cNzjUfp6KDAVEO2Oc-VedZhSV6FpuUx4DWLp5tG9ao';
 
 export default function PackedTable() {
+  const { data: orders, loading, error } = useFetchOrders(token);
+
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState<Selection>(new Set([]));
   const [visibleColumns] = useState<Selection>(new Set(INITIAL_VISIBLE_COLUMNS));
@@ -34,7 +37,7 @@ export default function PackedTable() {
 
   useEffect(() => {
     console.log("orders:", orders);
-  }, []);
+  }, [orders]);
 
   const pages = Math.ceil(orders.length / rowsPerPage);
 
@@ -56,7 +59,7 @@ export default function PackedTable() {
     }
 
     return filteredOrders;
-  }, [filterValue]);
+  }, [filterValue, orders, hasSearchFilter]);
 
   const items = useMemo(() => {
     const start = (page - 1) * rowsPerPage;
@@ -66,17 +69,17 @@ export default function PackedTable() {
   }, [page, filteredItems, rowsPerPage]);
 
   const sortedItems = useMemo(() => {
-    return [...items].sort((a: Order, b: Order) => {
-      const first = a[sortDescriptor.column as keyof Order] as string;
-      const second = b[sortDescriptor.column as keyof Order] as string;
+    return [...items].sort((a: typeof orders[0], b: typeof orders[0]) => {
+      const first = a[sortDescriptor.column as keyof typeof orders[0]] as string;
+      const second = b[sortDescriptor.column as keyof typeof orders[0]] as string;
       const cmp = first < second ? -1 : first > second ? 1 : 0;
 
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
   }, [sortDescriptor, items]);
 
-  const renderCell = useCallback((order: Order, columnKey: React.Key) => {
-    const cellValue = order[columnKey as keyof Order];
+  const renderCell = useCallback((order: typeof orders[0], columnKey: React.Key) => {
+    const cellValue = order[columnKey as keyof typeof orders[0]];
 
     switch (columnKey) {
       case "order_id":
@@ -111,7 +114,6 @@ export default function PackedTable() {
         return cellValue.toString();
     }
   }, []);
-  
 
   const onRowsPerPageChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     setRowsPerPage(Number(e.target.value));
@@ -171,11 +173,7 @@ export default function PackedTable() {
         </div>
       </div>
     );
-  }, [
-    filterValue,
-    onSearchChange,
-    onRowsPerPageChange,
-  ]);
+  }, [filterValue, onSearchChange, onRowsPerPageChange, orders.length]);
 
   const bottomContent = useMemo(() => {
     return (
@@ -206,19 +204,23 @@ export default function PackedTable() {
       wrapper: ["max-h-[382px]", "max-w-3xl"],
       th: ["bg-transparent", "text-default-500", "border-b", "border-divider"],
       td: [
-        // changing the rows border radius
-        // first
         "group-data-[first=true]:first:before:rounded-none",
         "group-data-[first=true]:last:before:rounded-none",
-        // middle
         "group-data-[middle=true]:before:rounded-none",
-        // last
         "group-data-[last=true]:first:before:rounded-none",
         "group-data-[last=true]:last:before:rounded-none",
       ],
     }),
     [],
   );
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return <div>Error: {error.message}</div>;
+  }
 
   return (
     <Table

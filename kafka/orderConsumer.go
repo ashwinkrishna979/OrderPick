@@ -19,7 +19,7 @@ func ConsumeOrder(orderController *controller.OrderController) {
 
 	c, err := kafka.NewConsumer(&kafka.ConfigMap{
 		// User-specific properties that you must set
-		"bootstrap.servers": "localhost:40391",
+		"bootstrap.servers": "localhost:45623",
 
 		// Fixed properties
 		"group.id":          "kafka-go-getting-started-1",

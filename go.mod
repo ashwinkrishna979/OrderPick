@@ -12,6 +12,7 @@ require (
 )
 
 require (
+	github.com/gin-contrib/cors v1.7.2 // indirect
 	github.com/hailocab/go-hostpool v0.0.0-20160125115350-e80d13ce29ed // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 )
