@@ -23,7 +23,7 @@ const INITIAL_VISIBLE_COLUMNS = ["order_id", "item_id", "created_at", "packing_s
 const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJFbWFpbCI6IiIsIkZpcnN0X25hbWUiOiIiLCJMYXN0X25hbWUiOiIiLCJVaWQiOiIiLCJleHAiOjE3MTg4NDE5NTF9.6cNzjUfp6KDAVEO2Oc-VedZhSV6FpuUx4DWLp5tG9ao';
 
 export default function PackedTable() {
-  const { data: orders, loading, error } = useFetchOrders(token);
+  var { data: orders, loading, error } = useFetchOrders(token);
 
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState<Selection>(new Set([]));
@@ -50,6 +50,9 @@ export default function PackedTable() {
   }, [visibleColumns]);
 
   const filteredItems = useMemo(() => {
+    if (!Array.isArray(orders)){
+      orders=[];
+    }
     let filteredOrders = [...orders];
 
     if (hasSearchFilter) {

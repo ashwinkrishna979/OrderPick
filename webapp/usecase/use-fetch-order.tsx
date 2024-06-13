@@ -8,6 +8,12 @@ interface Order {
   packing_status: boolean;
 }
 
+// Define the shape of the JSON response from the server
+interface OrdersResponse {
+  nextPageState: string;
+  orders: Order[];
+}
+
 // Define the return type for the hook
 interface UseFetchOrdersReturn {
   data: Order[];
@@ -24,18 +30,19 @@ const useFetchOrders = (token: string): UseFetchOrdersReturn => {
     const fetchData = async () => {
       try {
         const response = await fetch('http://localhost:8000/orders', {
-            
-        method: 'GET',
+          method: 'GET',
           headers: {
             'token': `${token}`,
             'Content-Type': 'application/json'
           }
         });
+
         if (!response.ok) {
           throw new Error('Network response was not ok');
         }
-        const result: Order[] = await response.json();
-        setData(result);
+
+        const result: OrdersResponse = await response.json();
+        setData(result.orders); // Extract orders from the response
       } catch (error) {
         setError(error as Error);
       } finally {
