@@ -56,7 +56,7 @@ export default function PackedTable() {
     let filteredOrders = [...orders];
 
     if (hasSearchFilter) {
-      filteredOrders = filteredOrders.filter((order) =>
+      filteredOrders = filteredOrders.handleClickfilter((order) =>
         order.order_id.toLowerCase().includes(filterValue.toLowerCase()),
       );
     }
@@ -92,7 +92,7 @@ export default function PackedTable() {
             <p className="text-bold text-tiny capitalize text-default-500">{order.order_id}</p>
           </div>
         );
-      case "created_at":
+      case "created_at":handleClick
         return (
           <div className="flex flex-col">
             <p className="text-bold text-small capitalize">{cellValue.toString()}</p>
