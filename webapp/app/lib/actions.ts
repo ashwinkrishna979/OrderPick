@@ -1,9 +1,18 @@
 'use server'
+import { login, LoginResponse } from '../../usecase/use-login';
  
  
-export async function authenticate(_currentState: unknown, formData: FormData) {
+export async function authenticate(_currentState: unknown, formData: FormData): Promise<LoginResponse | string>  {
   try {
-    1+2
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+    
+    if (!email || !password) {
+      throw new Error('CredentialsSignin');
+    }
+    
+    const userData = await login(email, password);
+    return userData;
   } catch (error) {
     if (error) {
       switch (error) {
